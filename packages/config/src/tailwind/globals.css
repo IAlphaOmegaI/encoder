@@ -1,0 +1,132 @@
+@import "tailwindcss";
+
+@plugin "tailwindcss-animate";
+
+@theme {
+  /* background shades - more distinct neutral */
+
+  --color-background-dimmed: hsl(0 0% 55%); /* Much darker */
+  --color-background: hsl(210 75% 98%); /* Light but not white */
+  --color-background-rich: hsl(0 0% 75%); /* Clear mid-tone */
+
+  /* foreground shades - pure neutral grays with more contrast */
+  --color-foreground-dimmed: hsl(0 0% 15%);
+  --color-foreground: hsl(224 71.4% 4.1%);
+  --color-foreground-rich: hsl(0 0% 25%);
+
+  /* emphasis shades - warmer browns with more distinction */
+  --color-emphasis-dimmed: hsl(25 15% 5%);
+  --color-emphasis: hsl(0 0 0);
+  --color-emphasis-rich: hsl(0, 0%, 26%);
+
+  /* accent shades - distinct cool grays */
+  --color-accent-dimmed: hsl(0 0% 93%); /* Notably darker */
+  --color-accent: hsl(0 0% 100%); /* Clean white */
+  --color-accent-rich: hsl(0 0% 100%); /* Mid-tone */
+  --color-accent-foreground: hsl(0 0% 45%); /* Darker for contrast */
+
+  /* primary shades - blue */
+  --color-primary-dimmed: hsl(186 81% 25%);
+  --color-primary: hsl(186 36% 54%);
+  --color-primary-rich: hsl(186 81% 25%);
+
+  /* secondary shades - teal green */
+  --color-secondary-dimmed: hsl(175 78% 27%);
+  --color-secondary: hsl(175 85% 35%);
+  --color-secondary-rich: hsl(175 78% 55%);
+
+  /* destructive shades */
+  --color-error-dimmed: hsl(0 74% 42%);
+  --color-error: hsl(0 72% 51%);
+  --color-error-rich: hsl(0 91% 71%);
+  --color-error-foreground: hsl(0 63% 31%);
+
+  /* success shades */
+  --color-success-dimmed: hsl(142 72% 29%);
+  --color-success: hsl(142 76% 36%);
+  --color-success-rich: hsl(142 69% 58%);
+  --color-success-foreground: hsl(144 61% 20%);
+
+  /* info shades */
+  --color-info-dimmed: hsl(201 96% 32%);
+  --color-info: hsl(200 98% 39%);
+  --color-info-rich: hsl(198 93% 60%);
+  --color-info-foreground: hsl(202 80% 24%);
+
+  /* warning shades */
+  --color-warning-dimmed: hsl(35 92% 33%);
+  --color-warning: hsl(41 96% 40%);
+  --color-warning-rich: hsl(48 96% 53%);
+  --color-warning-foreground: hsl(28 73% 26%);
+
+  /* neutral shades - more contrast */
+  --color-neutral-dimmed: hsl(0 15% 30%);
+  --color-neutral: hsl(0 12% 40%);
+  --color-neutral-rich: hsl(0 10% 50%);
+  --color-neutral-foreground: hsl(0 20% 15%);
+
+  /* extras */
+  --color-border: hsl(220 13% 91%); /* Darker for better visibility */
+  --color-ring: hsl(186 81% 25%); /* Matched to primary */
+
+  /* chart colors - red/gold theme */
+  --color-chart-1: hsl(0 85% 60%); /* Primary red */
+  --color-chart-2: hsl(45 85% 35%); /* Secondary gold */
+  --color-chart-3: hsl(15 75% 50%); /* Terracotta */
+  --color-chart-4: hsl(30 85% 45%); /* Bronze */
+  --color-chart-5: hsl(60 70% 55%); /* Light gold */
+
+  --radius: 0.5rem;
+  --text-2xs: 0.6rem;
+  --rounded-3xl: 1.5rem;
+
+  --animate-accordion-up: animate-accordion-up 0.2s ease-out;
+  --animate-accordion-down: animate-accordion-down 0.2s ease-out;
+}
+
+@keyframes animate-accordion-down {
+  from {
+    height: 0;
+  }
+
+  to {
+    height: var(--radix-accordion-content-height);
+  }
+}
+
+@keyframes animate-accordion-up {
+  from {
+    height: var(--radix-accordion-content-height);
+  }
+  to {
+    height: 0;
+  }
+}
+
+@custom-variant dark (&:where(.dark, .dark *));
+@variant dark {
+  /* background shades - true neutral dark */
+  --color-background-dimmed: hsl(0 0% 12%);
+  --color-background: hsl(0 0% 8%);
+  --color-background-rich: hsl(0 0% 25%);
+
+  /* foreground shades - neutral light */
+  --color-foreground-dimmed: hsl(0 0% 90%);
+  --color-foreground: hsl(0 0% 82%);
+  --color-foreground-rich: hsl(0 0% 75%);
+
+  /* emphasis shades - neutral light */
+  --color-emphasis-dimmed: hsl(0 0% 90%);
+  --color-emphasis: hsl(0 0% 85%);
+  --color-emphasis-rich: hsl(0 0% 70%);
+
+  /* accent shades - neutral dark with more distinction */
+  --color-accent-dimmed: hsl(0 0% 40%);
+  --color-accent: hsl(0 0% 15%);
+  --color-accent-rich: hsl(0 0% 25%);
+  --color-accent-foreground: hsl(0 0% 45%);
+
+  /* utility colors - neutral */
+  --color-border: hsl(0 0% 19%);
+  --color-ring: hsl(0 92% 40%);
+}
