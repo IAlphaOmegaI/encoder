@@ -3,6 +3,13 @@ services:
     build: .
     ports:
       - "8000:8000"
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+          cpus: '2'
+        reservations:
+          memory: 2G
     environment:
       - POSTGRES_SERVER=db
       - POSTGRES_USER=user
@@ -13,6 +20,11 @@ services:
       - MINIO_SECRET_KEY=minioadmin
       - MINIO_BUCKET_NAME=recordings
       - BACKEND_CORS_ORIGINS=["http://localhost:3000"]
+      - MALLOC_TRIM_THRESHOLD_=100000
+      - PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:512
+    ulimits:
+      memlock: -1
+      stack: 67108864
     depends_on:
       db:
         condition: service_healthy

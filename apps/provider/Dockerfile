@@ -30,4 +30,13 @@ RUN poetry install --only main --no-interaction --no-ansi
 # Set PYTHONPATH
 ENV PYTHONPATH=/app
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONMALLOC=malloc
+ENV MALLOC_TRIM_THRESHOLD_=100000
+ENV PYTHONDEVMODE=1
+ENV OMP_NUM_THREADS=1
+ENV MKL_NUM_THREADS=1
+ENV NUMEXPR_NUM_THREADS=1
+ENV PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:512
+
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]

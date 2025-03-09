@@ -44,63 +44,94 @@ async def create_recording(
         if format != 'encodec':
             raise HTTPException(status_code=400, detail="Only encodec format is supported")
 
-        # Read the encoded data
+        # Read the encoded data and make it writable
         encoded_data = np.frombuffer(file_content, dtype=np.float32).copy()
         
         # Print debug info
         print(f"Encoded data shape: {encoded_data.shape}")
+        print(f"Encoded data type: {encoded_data.dtype}")
         
-        # Convert to integer type and reshape
-        n_frames = encoded_data.shape[0] // 8
-        codes = torch.from_numpy(encoded_data).reshape(1, 8, n_frames).long()  # Convert to Long tensor
+        # Calculate frames based on the actual data shape
+        total_samples = encoded_data.shape[0]
+        CHUNK_SIZE = 3000  # Increased chunk size since we're dealing with raw samples
         
-        # Create a default scale tensor
-        scale = torch.ones(1, n_frames, device=codes.device)
-        
-        print(f"Codes shape: {codes.shape}, dtype: {codes.dtype}")
-        print(f"Scale shape: {scale.shape}")
+        def process_chunks():
+            for i in range(0, total_samples, CHUNK_SIZE * 8):
+                chunk_end = min(i + (CHUNK_SIZE * 8), total_samples)
+                chunk_size = (chunk_end - i) // 8  # Divide by 8 for proper reshaping
+                
+                # Process chunk
+                chunk_data = encoded_data[i:chunk_end]
+                codes_chunk = torch.from_numpy(chunk_data).reshape(1, 8, chunk_size).long()
+                scale_chunk = torch.ones(1, chunk_size)
+                
+                print(f"Processing chunk {i//(CHUNK_SIZE*8) + 1}")
+                print(f"Chunk shape: {codes_chunk.shape}")
+                
+                # Decode chunk
+                with torch.no_grad():
+                    decoded_chunk = model._decode_frame((codes_chunk, scale_chunk))
+                    result = decoded_chunk.squeeze().cpu().numpy()
+                    
+                # Clear memory
+                del codes_chunk
+                del scale_chunk
+                del decoded_chunk
+                if torch.cuda.is_available():
+                    torch.cuda.empty_cache()
+                
+                yield result
 
-        # Decode using EnCodec with both codes and scale
-        with torch.no_grad():
-            decoded_audio = model._decode_frame((codes, scale))
-            audio_data = decoded_audio.squeeze().cpu().numpy()
+        # Process chunks and write directly to file
+        with io.BytesIO() as temp_buffer:
+            # Create SoundFile object
+            sf_file = sf.SoundFile(
+                temp_buffer,
+                mode='w',
+                samplerate=sample_rate,
+                channels=1,
+                format='WAV',
+                subtype='PCM_16'
+            )
+            
+            try:
+                # Process and write chunks
+                for chunk in process_chunks():
+                    print(f"Processing decoded chunk shape: {chunk.shape}")
+                    # Resample chunk
+                    resampled_chunk = resampy.resample(
+                        chunk,
+                        sample_rate,
+                        22050
+                    )
+                    sf_file.write(resampled_chunk)
+            finally:
+                sf_file.close()
 
-        print(f"Decoded audio shape: {audio_data.shape}")
+            # Get final audio length
+            temp_buffer.seek(0)
+            with sf.SoundFile(temp_buffer) as sf_file:
+                duration = len(sf_file) / sf_file.samplerate
+                print(f"Final audio duration: {duration} seconds")
 
-        # Resample to 22.05kHz
-        target_sample_rate = 22050
-        resampled_audio = resampy.resample(
-            audio_data,
-            sample_rate,
-            target_sample_rate
-        )
-
-        # Save as WAV
-        output_buffer = io.BytesIO()
-        sf.write(
-            output_buffer, 
-            resampled_audio, 
-            target_sample_rate, 
-            format='WAV'
-        )
-        output_buffer.seek(0)
+            # Save to MinIO
+            temp_buffer.seek(0)
+            unique_filename = f"{uuid.uuid4()}.wav"
+            
+            minio_client.put_object(
+                bucket_name=settings.MINIO_BUCKET_NAME,
+                object_name=unique_filename,
+                data=temp_buffer,
+                length=temp_buffer.tell(),
+                content_type='audio/wav'
+            )
         
-        # Save to MinIO and database
-        unique_filename = f"{uuid.uuid4()}.wav"
-        
-        minio_client.put_object(
-            bucket_name=settings.MINIO_BUCKET_NAME,
-            object_name=unique_filename,
-            data=output_buffer,
-            length=output_buffer.getbuffer().nbytes,
-            content_type='audio/wav'
-        )
-        
+        # Create database record
         db_recording = Recording(
             filename=original_filename or file.filename,
             original_path=f"{settings.MINIO_BUCKET_NAME}/{unique_filename}",
-            duration=len(resampled_audio) / target_sample_rate,
-            sample_rate=target_sample_rate
+            duration=duration,
+            sample_rate=22050
         )
         
         db.add(db_recording)
@@ -115,6 +146,12 @@ async def create_recording(
         import traceback
         print(f"Traceback: {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=f"Error processing audio: {str(e)}")
+    finally:
+        # Aggressive cleanup
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+        import gc
+        gc.collect()
 
 @router.get("/", response_model=PaginatedRecordings)
 def list_recordings(
