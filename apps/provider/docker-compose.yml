@@ -21,7 +21,7 @@ services:
       - MINIO_BUCKET_NAME=recordings
       - BACKEND_CORS_ORIGINS=["http://localhost:3000"]
       - MALLOC_TRIM_THRESHOLD_=100000
-      - PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:512
+      - PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:256
     ulimits:
       memlock: -1
       stack: 67108864
